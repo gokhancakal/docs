@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: osrm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: osrm
+  template:
+    metadata:
+      labels:
+        app: osrm
+    spec:
+      containers:
+        - name: osrm
+          image: osrm/osrm-backend:latest
+          #image: public.ecr.aws/d4w9w4x2/osrm-backend:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            [
+              "osrm-extract -p /opt/car.lua /data/turkey-latest.osm.pbf && osrm-partition /data/turkey-latest.osrm && osrm-customize /data/turkey-latest.osrm && osrm-routed --algorithm mld /data/turkey-latest.osrm",
+            ]
+          ports:
+            - containerPort: 5000
+              name: osrm-port
+          volumeMounts:
+            - name: osrm-tr
+              readOnly: false
+              mountPath: /data
+      initContainers:
+        - name: get-osrm-file
+          image: busybox
+          #image: public.ecr.aws/runecast/busybox:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            [
+              #'export https_proxy=<proxy_server> && export http_proxy=<proxy_server> && echo "httpproxy="$http_proxy, "$(df -h)" && cd /data && wget http://download.geofabrik.de/europe/turkey-latest.osm.pbf && echo "$(ls)"',
+              'export https_proxy=<proxy_server> && export http_proxy=<proxy_server> && echo && wget -O /data/turkey-latest.osm.pbf http://download.geofabrik.de/europe/turkey-latest.osm.pbf',         
+            ]
+          volumeMounts:
+            - name: osrm-tr
+              readOnly: false
+              mountPath: /data
+      volumes:
+        - name: osrm-tr
+          emptyDir: {}
+          
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: osrm
+  labels:
+    app: osrm
+spec:
+  ports:
+    - port: 5000
+      targetPort: 5000
+      name: http
+  selector:
+    app: osrm
+  type: NodePort
