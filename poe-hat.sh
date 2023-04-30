@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IS_I2C=`sudo raspi-config nonint get_i2c`
+IS_I2C=`sudo raspi-config nonint get_i2c 1`
 [ $IS_I2C -ne 0 ]&&sudo raspi-config nonint do_i2c 0
 
 # Install required packages I
@@ -12,7 +12,7 @@ python -m venv /opt/python_base
 source /opt/python_base/bin/activate
 
 # Install required packages II
-pip install RPi.GPIO smbus numpy
+pip install RPi.GPIO smbus numpy pillow
 
 # Cleanout artifacts if necesary
 [ -d ~/PoE_HAT_B_code ] && rm -rf ~/PoE_HAT_B_code
@@ -25,6 +25,7 @@ unzip -o  PoE_HAT_B_code.zip -d .
 # Move required parts to poe-hat directory
 [ -d /opt/poe-hat ] && rm -rf /opt/poe-hat
 mkdir -p /opt/poe-hat
+chmod 777 -R /opt/poe-hat
 mv PoE_HAT_B_code/python/examples/main.py /opt/poe-hat/
 mv PoE_HAT_B_code/python/lib/waveshare_POE_HAT_B /opt/poe-hat/
 mv PoE_HAT_B_code/python/readme_EN.txt /opt/poe-hat/PoE_HAT_B_readme.txt
@@ -43,7 +44,7 @@ Description=Poe Hat B
 After=network.target
 [Service]
 Environment=systemd=true
-ExecStart=${PYTHON} ${HOME}/.poe-hat/main.py
+ExecStart=${PYTHON} /opt/poe-hat/main.py
 Restart=always
 RestartSec=30
 [Install]
