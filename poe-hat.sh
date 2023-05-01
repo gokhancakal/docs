@@ -1,14 +1,15 @@
 #!/bin/bash
 
+# Install required packages I
+apt update 
+apt install -y python3-pip python3-venv python3-pil libatlas-base-dev raspi-config unzip
+
 IS_I2C=`sudo raspi-config nonint get_i2c 1`
 [ $IS_I2C -ne 0 ]&&sudo raspi-config nonint do_i2c 0
 
-# Install required packages I
-apt update
-apt install -y python3-pip python3-venv python3-pil libatlas-base-dev
-
 # create and activate venv 
-python -m venv /opt/python_base
+[ -d /opt/python_base ] && rm -rf /opt/python_base
+python3 -m venv /opt/python_base
 source /opt/python_base/bin/activate
 
 # Install required packages II
@@ -36,6 +37,7 @@ rm -rf PoE_HAT_B_code
 rm -f $0
 
 # Create/Activate service
+[ -d /etc/systemd/system/poe-hat.service ] && rm -rf /etc/systemd/system/poe-hat.service
 
 PYTHON=`which python3 |head -n1`
 cat <<EOF >poe-hat.service
